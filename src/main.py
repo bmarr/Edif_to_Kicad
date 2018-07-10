@@ -71,7 +71,7 @@ def parse_libraries(parent_edif_object, output_path=".",
     """ extract all libraries and components from the EDIF """
 
     libraries = search_edif_objects(parent_edif_object, "library")
-    kicad_library = Kicad_Library(output_path+"/"+project_name+"-cache")
+    kicad_library = KicadLibrary(output_path+"/"+project_name+"-cache")
 
     if libraries != None:
         for edif_library in libraries:

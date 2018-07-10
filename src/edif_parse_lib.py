@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from kicad_lib import *
+from kicad_common import *
 
 from Edif_parser_mod import *
 
@@ -22,7 +23,7 @@ def extract_offset_connections(library_Component, port_impl_list, port_list, off
 				#print pin_name, pin_type, pin_number
 
 				if (pin_number!=None):
-					connection = Kicad_Connection(pin_number, pin_name)
+					connection = KicadConnection(pin_number, pin_name)
 					connection.set_offset(offset_x, offset_y)
 					dot_pt = port_impl.get_object("connectLocation.figure.dot.pt")
 					if (dot_pt!=None):
@@ -36,7 +37,7 @@ def extract_offset_connections(library_Component, port_impl_list, port_list, off
 						# y1 = dot_y
 						connection.set_pin(x1, y1, x2, y2)
 
-					library_Component.addConnection(connection)
+					library_Component.add_connection(connection)
 	return
 
 def extract_point_list(library_Component, point_list):
@@ -44,13 +45,13 @@ def extract_point_list(library_Component, point_list):
 
 def extract_offset_point_list(library_Component, point_list, offset_x, offset_y):
 	for ptl in point_list:
-		poly = Kicad_Poly()
+		poly = KicadPoly()
 		poly.set_offset(offset_x, offset_y)
 		pts = search_edif_objects(ptl, "pt")
 		for pt in pts:
 			x, y = convert_kicad_coor( extract_edif_pt(pt) )
 			poly.add_segment(x, y)
-		library_Component.addDraw(poly)
+		library_Component.add_draw(poly)
 	return
 
 def extract_arc_point_list(library_Component, point_list):
@@ -58,13 +59,13 @@ def extract_arc_point_list(library_Component, point_list):
 
 def extract_offset_arc_point_list(library_Component, point_list, offset_x, offset_y):
 	for ptl in point_list:
-		arc = Kicad_Arc()
+		arc = KicadArc()
 		arc.set_offset(offset_x, offset_y)
 		pts = search_edif_objects(ptl, "pt")
 		for pt in pts:
 			x, y = convert_kicad_coor( extract_edif_pt(pt) )
 			arc.add_point(x, y)
-		library_Component.addDraw(arc)
+		library_Component.add_draw(arc)
 	return
 
 def extract_path(library_Component, path_list):
@@ -101,17 +102,17 @@ def extract_offset_drawing(library_Component, figure_list, offset_x, offset_y):
 		if (rectangle!=None):
 			x1, y1 = convert_kicad_coor( extract_edif_pt(rectangle.get_param(0)) )
 			x2, y2 = convert_kicad_coor( extract_edif_pt(rectangle.get_param(1)) )
-			rectangle = Kicad_Rectangle(x1, y1, x2, y2)
+			rectangle = KicadRectangle(x1, y1, x2, y2)
 			rectangle.set_offset(offset_x, offset_y)
-			library_Component.addDraw(rectangle)
+			library_Component.add_draw(rectangle)
 
 		circle = figure.get_object("circle")
 		if (circle!=None):
 			x1, y1 = convert_kicad_coor( extract_edif_pt(circle.get_param(0)))
 			x2, y2 = convert_kicad_coor( extract_edif_pt(circle.get_param(1)))
-			circle = Kicad_Circle(x1, y1, x2, y2)
+			circle = KicadCircle(x1, y1, x2, y2)
 			circle.set_offset(offset_x, offset_y)
-			library_Component.addDraw(circle)
+			library_Component.add_draw(circle)
 
 	return
 
@@ -205,7 +206,7 @@ def extract_powerobject_symbol(library_Component, name, figure_list):
 		min_x = min_xy[0]
 		min_y = min_xy[1]
 
-		connection = Kicad_Connection("1", name)
+		connection = KicadConnection("1", name)
 		x_offset = -(min_x + (max_x - min_x) / 2)
 		if (name in set(['GND', 'DGND', 'AGND', 'EARTH', 'GND_POWER'])):
 			#y_offset = -100 # negative number works
@@ -219,7 +220,7 @@ def extract_powerobject_symbol(library_Component, name, figure_list):
 
 		library_Component.set_powerobject(True)
 
-		library_Component.addConnection(connection)
+		library_Component.add_connection(connection)
 		extract_offset_drawing(library_Component, figure_list, x_offset, y_offset)
 	else:
 		symbol_info['is_valid'] = False
@@ -379,12 +380,12 @@ def _extract_component_view(view, library_Component):
 	"""
 	library_Component.set_designator(ref)
 	#print "x = " + str(x) + ", y = " + str(y) + "; vx = " + str(value_x) + ", vy = " + str(value_y) + ";"
-	library_Component.addField({'id':0, 'ref':add_quote(ref), 'posx':x, 'posy':y, 'visible':'I', 'text_align':hvjustify[0], 'props':hvjustify[1] + "NN"})
-#	library_Component.addField({'id':1, 'ref':add_quote(view_name[0]), 'posx':value_x, 'posy':value_y, 'visible':'I', 'text_orientation':orientation})
-#	library_Component.addField({'id':0, 'ref':add_quote(ref), 'posx':x, 'posy':y})
-	library_Component.addField({'id':1, 'ref':add_quote(view_name[0]), 'visible':visible, 'posx':value_x, 'posy':value_y})
-	library_Component.addField({'id':2, 'ref':'""', 'posx':0, 'posy':0})
-	library_Component.addField({'id':3, 'ref':'""', 'posx':0, 'posy':0})
+	library_Component.add_field({'id':0, 'ref':add_quote(ref), 'posx':x, 'posy':y, 'visible':'I', 'text_align':hvjustify[0], 'props':hvjustify[1] + "NN"})
+#	library_Component.add_field({'id':1, 'ref':add_quote(view_name[0]), 'posx':value_x, 'posy':value_y, 'visible':'I', 'text_orientation':orientation})
+#	library_Component.add_field({'id':0, 'ref':add_quote(ref), 'posx':x, 'posy':y})
+	library_Component.add_field({'id':1, 'ref':add_quote(view_name[0]), 'visible':visible, 'posx':value_x, 'posy':value_y})
+	library_Component.add_field({'id':2, 'ref':'""', 'posx':0, 'posy':0})
+	library_Component.add_field({'id':3, 'ref':'""', 'posx':0, 'posy':0})
 
 	return library_Component
 
@@ -398,9 +399,9 @@ def extract_kicad_component_library(edif_cell):
 
 	#print view_name[0], view_name[0]
 
-	library_Component = Kicad_Library_Component(cell_name[0])
+	library_Component = KicadLibraryComponent(cell_name[0])
 
-	library_Component.addAlias(view_name[0])
+	library_Component.add_alias(view_name[0])
 
 	_extract_component_view(view, library_Component)
 
@@ -409,9 +410,9 @@ def extract_kicad_component_library(edif_cell):
 def extract_kicad_component_view_library(view, cell_name, view_index):
 	view_name = extract_edif_str_param(view, 0)
 
-	library_Component = Kicad_Library_Component(view_name[0])
+	library_Component = KicadLibraryComponent(view_name[0])
 
-	library_Component.addAlias(cell_name[0] + "_" + chr( ord('A') + view_index))
+	library_Component.add_alias(cell_name[0] + "_" + chr( ord('A') + view_index))
 
 	_extract_component_view(view, library_Component)
 
@@ -438,9 +439,9 @@ def extract_kicad_library(kicad_library, edif_library):
 			print "multiview component: " + cell_name_as_alias[0] + " creates new ones"
 			for view in view_list:
 				library_Component = extract_kicad_component_view_library(view, cell_name_as_alias, view_list.index(view))
-				kicad_library.addComponent( library_Component )
+				kicad_library.add_component( library_Component )
 		else:
 			library_Component = extract_kicad_component_library(edif_cell)
-			kicad_library.addComponent( library_Component )
+			kicad_library.add_component( library_Component )
 
 	return kicad_library
