@@ -4,6 +4,8 @@ from kicad_sch import *
 
 from Edif_parser_mod import *
 
+from kicad_common import *
+
 # from KiCAD 4.07 source include/eda_text.txt
 TEXT_NO_VISIBLE = int('1', 2)
 
@@ -21,7 +23,7 @@ def extract_kicad_text_notes(edif_annotate):
 		pt = stringDisplay.get_object("display.origin.pt")
 		if (pt!=None):
 			x, y = convert_kicad_coor( extract_edif_pt(pt) )
-			textnote = Kicad_TextNote(x, y)
+			textnote = KicadTextNote(x, y)
 			textnote.set_text(text)
 			figureGroupOverride = stringDisplay.get_object("display.figureGroupOverride")
 			if (figureGroupOverride!=None):
@@ -55,7 +57,7 @@ def extract_kicad_noconnection(instance, terminated_pin_pts):
 						#pt = portInstance.get_object("designator.stringDisplay.display.origin.pt")
 						#if (pt!=None):
 							x, y = convert_kicad_coor( extract_edif_pt(pt) )
-							noconnections.append( Kicad_NoConnection(x, y) )
+							noconnections.append( KicadNoConnection(x, y) )
 
 						# @TODO : il faut calculer le point a partir du composant dans la librairie :
 						# trop galere pour l'instant ...
@@ -90,7 +92,7 @@ def build_kicad_field(property, ref_xy, symbol_orientation):
 				prop_orientation = remove_quote(display_orientation.get_param(0))
 			else:
 				prop_orientation = "R0"
-			orientation = convert_kicad_orientation_to_local_fieldhv(prop_orientation, symbol_orientation)
+			orientation = convert_edif_orientation_to_hv(prop_orientation, symbol_orientation)
 
 			pt = stringDisplay.get_object("display.origin.pt")
 			if (pt!=None):
@@ -150,7 +152,7 @@ def extract_kicad_component(instance):
 		return None
 
 	refDesign = stringDisplay.get_param(0)
-	kicad_component = Kicad_Schematic_Component(libname, refDesign)
+	kicad_component = KicadSchematicComponent(libname, refDesign)
 
 	# component orientation
 	instance_orientation = instance.get_object("transform.orientation")
@@ -167,7 +169,7 @@ def extract_kicad_component(instance):
 	else:
 		refdes_orientation = "R0"
 
-	refdes_orientation = convert_kicad_orientation_to_local_fieldhv(refdes_orientation, comp_orientation)
+	refdes_orientation = convert_edif_orientation_to_hv(refdes_orientation, comp_orientation)
 
 	# component position - the reference point
 	pt = instance.get_object("transform.origin.pt")
@@ -232,7 +234,7 @@ def extract_kicad_component(instance):
 
 	#*******
 	for field in f_data:
-		kicad_component.addField(field)
+		kicad_component.add_field(field)
 
 	return kicad_component
 
@@ -251,7 +253,7 @@ def extract_kicad_wires(edif_net):
 					pt = pts.get_param(i)
 					x, y = convert_kicad_coor( extract_edif_pt(pt) )
 					if (i>0):
-						wire = Kicad_Wire(xn, yn, x, y)
+						wire = KicadWire(xn, yn, x, y)
 						wires.append( wire )
 					xn, yn = [x, y]
 
@@ -272,7 +274,7 @@ def extract_kicad_net_aliases(edif_net):
 				if (pt!=None):
 					x, y = convert_kicad_coor( extract_edif_pt(pt) )
 					#print net_name[1], x, y
-					netAlias = Kicad_NetAlias(x, y, normalize_edif_string(net_name[1]))
+					netAlias = KicadNetAlias(x, y, normalize_edif_string(net_name[1]))
 					net_aliases.append(netAlias)
 
 	if (len(net_aliases)==0):
@@ -290,7 +292,7 @@ def extract_kicad_junctions(edif_net):
 			pt = instance.get_object("transform.origin.pt")
 			if (pt!=None):
 				x, y = convert_kicad_coor( extract_edif_pt(pt) )
-				junction = Kicad_Junction( x, y )
+				junction = KicadJunction( x, y )
 				junctions.append(junction)
 
 	if (len(junctions)==0):
@@ -371,7 +373,7 @@ def extract_kicad_port(edif_port):
 				else:
 					refdes_orientation = "R0"
 
-				refdes_orientation = convert_kicad_orientation_to_local_fieldhv(refdes_orientation, port_orientation)
+				refdes_orientation = convert_edif_orientation_to_hv(refdes_orientation, port_orientation)
 
 				if (designator_pt!=None):
 					porttext_x, porttext_y = convert_kicad_local_coor(extract_edif_pt(designator_pt), [component_x, component_y], port_orientation)
@@ -381,7 +383,7 @@ def extract_kicad_port(edif_port):
 
 	if (pI_type=="MODULETEXT"):
 
-		textPort = Kicad_TextPort(p1_name, component_x, component_y)
+		textPort = KicadTextPort(p1_name, component_x, component_y)
 
 		name, rot = name.split("_")
 		name = name.replace("PORT", "")
@@ -451,11 +453,11 @@ def extract_kicad_port(edif_port):
 	f2_data = {'ref': '""',  'posx':component_x, 'posy':component_y, 'attributs':'0001'}
 	f3_data = {'ref': '""',  'posx':component_x, 'posy':component_y, 'attributs':'0001'}
 
-	kicad_component = Kicad_Schematic_Component(name, ref)
+	kicad_component = KicadSchematicComponent(name, ref)
 	kicad_component.set_position(component_x, component_y)
 	kicad_component.set_orientation(port_orientation)
-	kicad_component.addField(f0_data)
-	kicad_component.addField(f1_data)
-	kicad_component.addField(f2_data)
-	kicad_component.addField(f3_data)
+	kicad_component.add_field(f0_data)
+	kicad_component.add_field(f1_data)
+	kicad_component.add_field(f2_data)
+	kicad_component.add_field(f3_data)
 	return kicad_component

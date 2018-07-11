@@ -84,7 +84,7 @@ def parse_libraries(parent_edif_object, output_path=".",
 
 def parse_schematic(parent_edif_object, filename, project_name="TestTemplate"):
     """ Extract a schematic page from EDIF """
-    schematic = Kicad_Schematic(filename, project_name)
+    schematic = KicadSchematic(filename, project_name)
 
 
     edif_instances = search_edif_objects(parent_edif_object, "instance")
