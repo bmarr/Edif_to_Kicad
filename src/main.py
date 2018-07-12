@@ -16,25 +16,18 @@ from Edif_parser_mod import \
             Read_Edif_file, \
             extract_edif_str_param
 
-global_import_origin = {'origin':"", 'version':""}
-global_import_views_as_components = False
-
-def set_import_style_by_origin(origin="unknown", version="unknown"):
+def set_import_style(style, origin="unknown", version="unknown"):
     """ Let EDIF determine an nuances for more accurate conversion """
-    style_was_affected = True
 
     if origin == "unknown":
-        global_import_views_as_components = False
-        style_was_affected = False
+        style['views_as_components'] = False
     elif origin == "OrCAD Capture":
-        global_import_views_as_components = True
-    else:
-        style_was_affected = False
+        style['views_as_components'] = True
 
-    return style_was_affected
+    return style
 
-def parse_status_for_import_origin(parent_edif_object, output_path=".",
-                                   project_name="TestTemplate"):
+def get_edif_origin(parent_edif_object, output_path=".", \
+                                   project_name="test_project"):
     """ extracts the originating tool name from the EDIF """
 
     import_data_origin = "unknown"
@@ -82,7 +75,8 @@ def parse_libraries(parent_edif_object, output_path=".",
     return kicad_library
 
 
-def parse_schematic(parent_edif_object, filename, project_name="TestTemplate"):
+def parse_schematic(parent_edif_object, filename,
+                    project_name="TestTemplate"):
     """ Extract a schematic page from EDIF """
     schematic = KicadSchematic(filename, project_name)
 
@@ -136,6 +130,9 @@ def parse_schematic(parent_edif_object, filename, project_name="TestTemplate"):
 
 if __name__ == "__main__":
 
+    import_origin = {'origin':"", 'version':""}
+    import_style = {'views_as_components':True}
+
     parser = argparse.ArgumentParser()
     parser.add_argument('input')
     args = parser.parse_args()
@@ -166,16 +163,13 @@ if __name__ == "__main__":
             if version[0] == '2' and version[1] == '0' and version[2] == '0':
                 print "Edif 2.0.0 checked ;)"
 
-                global_import_origin = \
-                    parse_status_for_import_origin(
-                        edif_object)
-                print "Import origin: " + \
-                    str(global_import_origin['origin']) + \
-                    " version: " + str(global_import_origin['version'])
+                import_origin = get_edif_origin(edif_object)
+                print "Import origin: " \
+                    + str(import_origin['origin']) \
+                    + " version: " + str(import_origin['version'])
 
-                custom_import = set_import_style_by_origin(
-                    global_import_origin['origin'],
-                    global_import_origin['version'])
+                import_style = set_import_style(import_origin['origin'],
+                                                import_origin['version'])
 
                 parse_libraries(edif_object, output_path, project_name)
 
