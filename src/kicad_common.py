@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+""" Common functions for the kicad_to_edif.py project """
 
 import pprint
 import re

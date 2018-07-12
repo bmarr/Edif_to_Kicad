@@ -1,9 +1,15 @@
 #!/usr/bin/env python
+""" Parses an EDIF file and generates a KiCAD library (*-cache.lib) file """
 
 from kicad_lib import *
 from kicad_common import *
 
-from Edif_parser_mod import *
+#from Edif_parser_mod import *
+from Edif_parser_mod import \
+            search_edif_objects, \
+            Read_Edif_file, \
+            extract_edif_str_param, \
+            extract_edif_pt
 
 def extract_connections(library_Component, port_impl_list, port_list):
 	return extract_offset_connections(library_Component, port_impl_list, port_list, 0, 0)
