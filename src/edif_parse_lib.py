@@ -164,10 +164,10 @@ def extract_pin_parameters(port_impl_p_name, port_list):
             #print port_impl_p_name, "found"
             properties = search_edif_objects(port, "property")
 
-            for property in properties:
-                p1_name = remove_quote(extract_edif_str_param(property, 0)[1])
+            for prop in properties:
+                p1_name = remove_quote(extract_edif_str_param(prop, 0)[1])
                 string = \
-                    remove_quote(property.get_object("string").get_param(0))
+                    remove_quote(prop.get_object("string").get_param(0))
                 #print p1_name, ":", string
 
                 if p1_name == "Name":
@@ -280,6 +280,27 @@ def extract_powerobject_symbol(library_component, name, figure_list):
     symbol_info['max_y'] = max_y
     return symbol_info
 
+def get_edif_string_anchor(prop):
+    """ Helper function: get x, y anchor for string """
+    xpos, ypos = [0, 0]
+
+    string = prop.get_object("string")
+    if string != None:
+        string_display = string.get_object("stringDisplay")
+    else:
+        string_display = prop.get_object("stringDisplay")
+
+    if string_display != None:
+        value = string_display.get_param(0)
+        pointxy = string_display.get_object("display.origin.pt")
+        if pointxy != None:
+            xpos, ypos = convert_kicad_coor(extract_edif_pt(pointxy))
+    else:
+        print "WARN: string with no point in EDIF as " \
+              + str(extract_edif_str_param(string, 0)[0])
+
+    return [xpos, ypos]
+
 def _extract_component_view(view, library_component):
     """ Extracts an EDIF component or drawing entity to KiCad """
     view_name = extract_edif_str_param(view, 0)
@@ -296,31 +317,21 @@ def _extract_component_view(view, library_component):
     if interface != None:
         symbol = interface.get_object("symbol")
         if symbol != None:
-            property_list = search_edif_objects(symbol, "property")
-            if property_list != None:
-                for property in property_list:
-                    property_type = extract_edif_str_param(property, 0)[0]
-                    if property_type == "VALUE":
-                        string = property.get_object("string")
-                        if string != None:
-                            string_display = string.get_object("stringDisplay")
-                            if string_display != None:
-                                value = string_display.get_param(0)
-                                pointxy = string_display.get_object("display.origin.pt")
-                                if pointxy != None:
-                                    value_x, value_y = convert_kicad_coor(extract_edif_pt(pointxy))
-                            else:
-                                print "WARN: unexpected missing string_display in EDIF as " \
-                                      + str(extract_edif_str_param(string, 0)[0])
-                    elif property_type == "PIN_NAMES_VISIBLE":
-                        string = property.get_object("string")
+            prop_list = search_edif_objects(symbol, "property")
+            if prop_list != None:
+                for prop in prop_list:
+                    prop_type = extract_edif_str_param(prop, 0)[0]
+                    if prop_type == "VALUE":
+                        value_x, value_y = get_edif_string_anchor(prop)
+                    elif prop_type == "PIN_NAMES_VISIBLE":
+                        string = prop.get_object("string")
                         if string != None:
                             pin_names_visible = \
                                 remove_quote(extract_edif_str_param(string, 0)[1])
                             if pin_names_visible == "False":
                                 library_component.set_pin_names_visible(False)
-                    elif property_type == "PIN_NUMBERS_VISIBLE":
-                        string = property.get_object("string")
+                    elif prop_type == "PIN_NUMBERS_VISIBLE":
+                        string = prop.get_object("string")
                         if string != None:
                             pin_numbers_visible = \
                                 remove_quote(extract_edif_str_param(string, 0)[1])
@@ -341,6 +352,8 @@ def _extract_component_view(view, library_component):
             ref = remove_quote(ref)
             if ref.endswith('?'):
                 ref = ref[:-1]
+            #pointxy = get_edif_string_anchor(designator)
+            #print "pointxy = " + str(pointxy)
             string_display = designator.get_object("stringDisplay")
             if string_display != None:
                 print "Info: found extra information in reference designator:"
@@ -468,7 +481,7 @@ def extract_kicad_component_library(edif_cell):
 
     return library_component
 
-def extract_kicad_component_view_library(view, cell_name, view_index):
+def extract_edif_library_view(view, cell_name, view_index):
     """ Extract a single EDIF component view (convert drawing) """
     view_name = extract_edif_str_param(view, 0)
 
@@ -504,9 +517,9 @@ def extract_kicad_library(kicad_library, edif_library):
                   + " creates new ones"
             for view in view_list:
                 library_component = \
-                  extract_kicad_component_view_library(view,
-                                                       cell_name_as_alias,
-                                                       view_list.index(view))
+                  extract_edif_library_view(view,
+                                            cell_name_as_alias,
+                                            view_list.index(view))
                 kicad_library.add_component(library_component)
         else:
             library_component = extract_kicad_component_library(edif_cell)
