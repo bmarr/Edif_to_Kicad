@@ -6,7 +6,6 @@ from kicad_sch import *
 #from Edif_parser_mod import *
 from Edif_parser_mod import \
             search_edif_objects, \
-            Read_Edif_file, \
             extract_edif_str_param, \
             extract_edif_pt
 
@@ -27,7 +26,7 @@ def eda_attribut_string(attribut_bin):
 
     return str(int(str(attribut_bin), 2)).zfill(4)
 
-def extract_kicad_text_notes(edif_annotate):
+def extract_kicad_text_note(edif_annotate):
     """ Parse EDIF general text from schematic to KiCad schematic """
 
     text_notes = []
@@ -56,6 +55,44 @@ def extract_kicad_text_notes(edif_annotate):
         return None
     else:
         return text_notes
+
+def extract_kicad_wire_notes_lines(edif_figure):
+    """ Parse EDIF figure DASHED_LINE polygon
+        from schematic to KiCad schematic
+    """
+
+    wire_notes_lines = []
+    xpos, ypos = [0, 0]
+    startx, starty = [0, 0]
+    fromx, fromy = [0, 0]
+    figure_group_override = edif_figure.get_object("figureGroupOverride")
+    if figure_group_override != None:
+        figure_style = figure_group_override.get_param(0)
+        #print "figure style = " + str(figure_style)
+        if figure_style == "DASHED_LINE":
+            point_list = edif_figure.get_object("polygon.pointList")
+            edif_pts = search_edif_objects(point_list, "pt")
+            points = 1
+            for edif_pt in edif_pts:
+                xpos, ypos = convert_kicad_coor(extract_edif_pt(edif_pt))
+                if points == 1:
+                    fromx, fromy = [xpos, ypos]
+                    startx, starty = [xpos, ypos]
+                else:
+                    line = KicadWireNotesLine(fromx, fromy, xpos, ypos)
+                    wire_notes_lines.append(line)
+                    fromx, fromy = [xpos, ypos]
+                points += 1
+
+            if points >= 2:
+                line = KicadWireNotesLine(fromx, fromy, startx, starty)
+                wire_notes_lines.append(line)
+
+    if len(wire_notes_lines) == 0:
+        return None
+    else:
+        return wire_notes_lines
+
 # pylint: disable=W0105
 '''
 def extract_kicad_noconnection(instance, terminated_pin_pts):
@@ -184,7 +221,7 @@ def extract_kicad_component(instance):
     """ Extracts a component from EDIF and creates a KiCad component """
     f_data = []
     view_ref = instance.get_object("viewRef")
-    cell_ref = view_ref.get_object("cellRef")
+    #cell_ref = view_ref.get_object("cellRef")
     libname = "" + view_ref.get_param(0)
     #libname = "IMPORT_"+cellRef.get_param(0)
     hvjustify = text_justify("CENTERCENTER", "R0", "R0")
@@ -233,15 +270,15 @@ def extract_kicad_component(instance):
     #     component x-axis line of symmetry
     #  - visible properties text is offset from component
     #     relative to designator [xpos, ypos]
-    prop_xy = component_xy
+    #prop_xy = component_xy
     edif_pt = string_display.get_object("display.origin.pt")
     if edif_pt != None:
         xpos, ypos = convert_kicad_local_coor(extract_edif_pt(edif_pt),
                                               component_xy,
                                               comp_orientation)
-        prop_xy = convert_kicad_local_coor(extract_edif_pt(edif_pt),
-                                           component_xy,
-                                           comp_orientation)
+        #prop_xy = convert_kicad_local_coor(extract_edif_pt(edif_pt),
+        #                                   component_xy,
+        #                                   comp_orientation)
 
     display_orientation = string_display.get_object("display.orientation")
     if display_orientation != None:

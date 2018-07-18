@@ -190,6 +190,19 @@ class KicadJunction(object):
         to_write += "\n"
         return [to_write]
 
+class KicadWireNotesLine(object):
+    """ Draw a text note line """
+
+    def __init__(self, xpos1, ypos1, xpos2, ypos2):
+        self._wire = [xpos1, ypos1, xpos2, ypos2]
+
+    def output(self):
+        """ Write the wire as KiCad schematic strings """
+        to_write = "Wire Notes Line\n\t"
+        to_write += " ".join(str(coor) for coor in self._wire)
+        to_write += "\n"
+        return [to_write]
+
 # annotate
 class KicadTextNote(object):
     """ Place a text note on the schematic """

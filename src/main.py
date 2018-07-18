@@ -80,11 +80,11 @@ def parse_schematic(parent_edif_object, filename,
     """ Extract a schematic page from EDIF """
     schematic = KicadSchematic(filename, project_name)
 
-
     edif_instances = search_edif_objects(parent_edif_object, "instance")
     edif_nets = search_edif_objects(parent_edif_object, "net")
     edif_ports = search_edif_objects(parent_edif_object, "portImplementation")
     edif_annotations = search_edif_objects(parent_edif_object, "annotate")
+    edif_figures = search_edif_objects(parent_edif_object, "figure")
 
     kicad_components = []
         #kicad_noconnections = []
@@ -111,8 +111,12 @@ def parse_schematic(parent_edif_object, filename,
     kicad_text_notes = []
     for edif_annotation in edif_annotations:
         kicad_append(kicad_text_notes,
-                     extract_kicad_text_notes(edif_annotation))
+                     extract_kicad_text_note(edif_annotation))
 
+    kicad_wire_notes_lines = []
+    for edif_figure in edif_figures:
+        kicad_append(kicad_wire_notes_lines,
+                     extract_kicad_wire_notes_lines(edif_figure))
 
     schematic.add_kicad_object(kicad_components)
     #schematic.add_kicad_object( kicad_noconnections )
@@ -121,6 +125,7 @@ def parse_schematic(parent_edif_object, filename,
     schematic.add_kicad_object(kicad_net_aliases_list)
     schematic.add_kicad_object(kicad_junctions_list)
     schematic.add_kicad_object(kicad_text_notes)
+    schematic.add_kicad_object(kicad_wire_notes_lines)
 
     schematic.save()
 
